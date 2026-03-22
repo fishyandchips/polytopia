@@ -1,39 +1,81 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, MapControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, MapControls, PerspectiveCamera, Edges, useCursor, Line } from '@react-three/drei';
+import { generateTerrain } from './utils/init';
+import { NUM_ROWS, NUM_COLS } from './constants/meta';
 
-const BOX_SIZE = 2;
-const NUM_ROWS = 11;
-const NUM_COLS = 11;
+const Village = ({ position, size, row, col }) => {
+  const [x, y, z] = position;
 
-const TERRAIN_COLOURS = {
-Desert: "#FFEE8F",
-Grass: "#8FFFA2",
-Water: "#8FE1FF",
-Ocean: "#7B84DB",
-Snow: "#F0FFFE"
-};
-
-function Box({ color, ...props }) {  
   return (
-    <mesh
-      {...props}
-    >
-      <boxGeometry args={[BOX_SIZE, BOX_SIZE, BOX_SIZE]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
+    <>
+      <mesh
+        position={position}
+      >
+        <boxGeometry args={[size, size, size]} />
+        <meshStandardMaterial 
+          color={"#C79973"}
+        />
+      </mesh>
+      <mesh
+        position={[x, y + 1, z]}
+        rotation={[0, 40, 0]}
+      >
+        <coneGeometry args={[1.2, 1, 4]} />
+        <meshStandardMaterial 
+          color={"#C79973"}
+        />
+      </mesh>
+      <Line
+        points={[
+          [2 * row - 3, 1, 2 * col - 3],
+          [2 * row - 3, 1, 2 * col + 3],
+          [2 * row + 3, 1, 2 * col + 3],
+          [2 * row + 3, 1, 2 * col - 3],
+          [2 * row - 3, 1, 2 * col - 3],
+        ]}
+        color="white"
+        lineWidth={4}
+        dashed={true}
+        dashSize={0.3}
+        gapSize={0.5}
+      />
+    </>
   );
 }
 
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+function Box({ color, size, ...props }) { 
+  const [hovered, setHovered] = useState(false); 
+  useCursor(hovered);
+
+  const startHover = (e) => {
+    e.stopPropagation();
+    setHovered(true);
   }
 
-  return array;
+  const endHover = (e) => {
+    e.stopPropagation();
+    setHovered(false);
+  }
+
+  return (
+    <mesh
+      {...props}
+      onPointerEnter={startHover}
+      onPointerLeave={endHover}
+    >
+      <boxGeometry args={[size, size, size]} />
+      <meshStandardMaterial 
+        color={color}
+      />
+      {hovered && <Edges
+        linewidth={5}
+        color="white"
+      />}
+    </mesh>
+  );
 }
 
 export default function Home() {
@@ -42,91 +84,25 @@ export default function Home() {
       Array.from({ length: NUM_COLS }, () => "#FFFFFF")
     )
   );
+  const [features, setFeatures] = useState(
+    Array.from({ length: NUM_ROWS }, () =>
+      Array.from({ length: NUM_COLS }, () => null)
+    )
+  );
 
-  function generateTerrain() {
-    const newBoard = Array.from({ length: NUM_ROWS }, () =>
-      Array.from({ length: NUM_COLS }, () => TERRAIN_COLOURS.Ocean)
-    );
-    const terrainSizes = Object.fromEntries(
-      Object.entries(TERRAIN_COLOURS).map(([terrain, _]) => [terrain, Math.floor(Math.random() * 10 + 20)])
-    );
-    const queue = [];
-    const visited = new Set();
-
-    Object.keys(TERRAIN_COLOURS).forEach((terrain) => {
-      if (terrain == "Water" || terrain == "Ocean") {
-        return;
-      }
-
-      let x = Math.floor(Math.random() * NUM_ROWS);
-      let y = Math.floor(Math.random() * NUM_COLS);
-
-      while (visited.has([x, y])) {
-        x = Math.floor(Math.random() * NUM_ROWS);
-        y = Math.floor(Math.random() * NUM_COLS);
-      }
-
-      visited.add(JSON.stringify([x, y]));
-      queue.push([x, y, terrain]);
-    });
-
-    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-
-    while (queue.length > 0) {
-      const [r, c, terrain] = queue.shift();
-      newBoard[r][c] = TERRAIN_COLOURS[terrain];
-      
-      for (const [dr, dc] of shuffle(directions)) {
-        const newRow = r + dr;
-        const newCol = c + dc;
-
-        if (newRow < 0 || newRow >= NUM_ROWS || newCol < 0 || newCol >= NUM_COLS) {
-          continue;
-        }
-
-        if (visited.has(JSON.stringify([newRow, newCol]))) {
-          continue;
-        }
-
-        if (terrainSizes[terrain] == 0) {
-          continue;
-        }
-
-        visited.add(JSON.stringify([newRow, newCol]));
-        queue.push([newRow, newCol, terrain]);
-        terrainSizes[terrain]--;
-      }
-    }
-
-    for (let r = 0; r < NUM_ROWS; r++) {
-      for (let c = 0; c < NUM_COLS; c++) {
-        if (newBoard[r][c] != TERRAIN_COLOURS.Ocean) {
-          continue;
-        }
-
-        for (const [dr, dc] of directions) {
-          const newRow = r + dr;
-          const newCol = c + dc;
-
-          if (newRow < 0 || newRow >= NUM_ROWS || newCol < 0 || newCol >= NUM_COLS) {
-            continue;
-          }
-
-          if (newBoard[newRow][newCol] != TERRAIN_COLOURS.Water && newBoard[newRow][newCol] != TERRAIN_COLOURS.Ocean) {
-            newBoard[r][c] = TERRAIN_COLOURS.Water;
-            break;
-          }
-        }
-      }
-    }
-
+  const setBoardAndFeatures = () => {
+    const { newBoard, newFeatures } = generateTerrain();
     setBoard(newBoard);
+    setFeatures(newFeatures);
   }
+
+  useEffect(() => {
+    setBoardAndFeatures();
+  }, [])
 
   return (
     <div className="w-[100vw] h-[100vh]">
-      <Canvas
-      >
+      <Canvas>
         <PerspectiveCamera
           makeDefault
           position={[27, 15, 27]}
@@ -134,21 +110,46 @@ export default function Home() {
         />
         <MapControls target={[0, -15, 0]} enableRotate={false} />
 
+        <Box
+          position={[20, 2, 20]} 
+          color={"#FFFFFF"}
+          size={1}
+        />
+
+        {features.map((row, rowIndex) =>
+          row.map((col, colIndex) => {
+            if (!col) return;
+
+            if (col == "Village") {
+              return (
+                <Village
+                  key={`${rowIndex}, ${colIndex}`}
+                  position={[2 * rowIndex, 1.5, 2 * colIndex]}
+                  size={1}
+                  row={rowIndex}
+                  col={colIndex}
+                />
+              );
+            }
+          })
+        )}
+
         {board.map((row, rowIndex) =>
           row.map((col, colIndex) => (
             <Box 
-              key={`${rowIndex}, ${colIndex}`} 
-              position={[BOX_SIZE * rowIndex, 0, BOX_SIZE * colIndex]} 
+              key={`${rowIndex}, ${colIndex}`}
+              position={[2 * rowIndex, 0, 2 * colIndex]} 
               color={col}
+              size={2}
             />
           ))
         )}
 
-        <ambientLight intensity={0.5} />
+        <ambientLight intensity={1} />
         <directionalLight color="white" position={[0, 10, 0]} />
       </Canvas >
 
-      <button className="absolute right-10 bottom-10 cursor-pointer bg-[#000000] rounded-md p-5 text-[#FFFFFF]" onClick={generateTerrain}>
+      <button className="absolute right-10 bottom-10 cursor-pointer bg-[#000000] rounded-md p-5 text-[#FFFFFF]" onClick={setBoardAndFeatures}>
         Generate Terrain
       </button>
     </div>

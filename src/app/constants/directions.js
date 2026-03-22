@@ -1,0 +1,1 @@
+export const CARDINAL_DIRECTIONS = [[-1, 0], [1, 0], [0, -1], [0, 1]];

@@ -1,6 +1,6 @@
 import { TERRAIN_COLOURS } from "~/app/constants/terrain";
 import { NUM_ROWS, NUM_COLS, MIN_VILLAGE_RADIUS, MAX_VILLAGE_RADIUS } from "~/app/constants/meta";
-import { CARDINAL_DIRECTIONS } from "~/app//constants/directions";
+import { CARDINAL_DIRECTIONS } from "~/app/constants/directions";
 
 /** General helper function that shuffles an array using the 
  * Fisher-Yates shuffle algorithm, used to go through all the
@@ -57,7 +57,7 @@ const generateFirstVillage = (queue, visited, villagePositions) => {
  * @param {String[][]} features 
  * @param {[Number, Number][]} villagePositions 
  */
-const generateOtherVillages = (queue, visited, features, villagePositions) => {
+const generateOtherVillages = (queue, visited, board, villagePositions) => {
   // Villages can only spawn between 3-4 tiles away from 
   // nearby villages
   const possibleSpawns = [];
@@ -74,7 +74,7 @@ const generateOtherVillages = (queue, visited, features, villagePositions) => {
   // Runs BFS to find the next possible village location
   while (queue.length > 0) {
     const [r, c] = queue.shift();
-    features[r][c] = "Village";
+    board[r][c].feature = "Village";
     villagePositions.push([r, c]);
     
     for (const [dr, dc] of shuffle(possibleSpawns)) {
@@ -110,7 +110,7 @@ const generateOtherVillages = (queue, visited, features, villagePositions) => {
  */
 const placeVillagesOnLand = (board, villagePositions) => {
   for (const [villageX, villageY] of villagePositions) {
-    if (board[villageX][villageY] != TERRAIN_COLOURS.Ocean) {
+    if (board[villageX][villageY].terrain != "Ocean") {
       continue;
     }
 
@@ -124,8 +124,8 @@ const placeVillagesOnLand = (board, villagePositions) => {
       
       // Sets the land tile for a village on water to be the 
       // the same as the closest land tile
-      if (board[r][c] != TERRAIN_COLOURS.Ocean) {
-        board[villageX][villageY] = board[r][c];
+      if (board[r][c].terrain != "Ocean") {
+        board[villageX][villageY].terrain = board[r][c].terrain;
         break;
       }
       
@@ -152,16 +152,16 @@ const placeVillagesOnLand = (board, villagePositions) => {
 /** Helper function for generateTerrain, sets the positions
  * for all villages.
  * 
- * @param {String[][]} features 
+ * @param {String[][]} board
  */
-const generateVillages = (board, features) => {
+const generateVillages = (board) => {
   const villagePositions = [];
   
   const queue = [];
   const visited = new Set();
 
   generateFirstVillage(queue, visited, villagePositions);
-  generateOtherVillages(queue, visited, features, villagePositions);
+  generateOtherVillages(queue, visited, board, villagePositions);
   placeVillagesOnLand(board, villagePositions);
 }
 
@@ -216,7 +216,7 @@ const generateLand = (board) => {
 
   while (queue.length > 0) {
     const [r, c, terrain] = queue.shift();
-    board[r][c] = TERRAIN_COLOURS[terrain];
+    board[r][c].terrain = terrain;
     
     for (const [dr, dc] of shuffle(CARDINAL_DIRECTIONS)) {
       const newRow = r + dr;
@@ -251,7 +251,7 @@ const generateLand = (board) => {
 const generateWater = (board) => {
   for (let r = 0; r < NUM_ROWS; r++) {
     for (let c = 0; c < NUM_COLS; c++) {
-      if (board[r][c] != TERRAIN_COLOURS.Ocean) {
+      if (board[r][c].terrain != "Ocean") {
         continue;
       }
 
@@ -266,8 +266,8 @@ const generateWater = (board) => {
 
         // If one of the adjacent tiles is a land tile,
         // this ocean tile becomes a water tile
-        if (board[newRow][newCol] != TERRAIN_COLOURS.Water && board[newRow][newCol] != TERRAIN_COLOURS.Ocean) {
-          board[r][c] = TERRAIN_COLOURS.Water;
+        if (board[newRow][newCol].terrain != "Water" && board[newRow][newCol].terrain != "Ocean") {
+          board[r][c].terrain = "Water";
           break;
         }
       }
@@ -275,17 +275,20 @@ const generateWater = (board) => {
   }
 }
 
-export const generateTerrain = () => {
+export const initBoard = () => {
   const newBoard = Array.from({ length: NUM_ROWS }, () =>
-    Array.from({ length: NUM_COLS }, () => TERRAIN_COLOURS.Ocean)
-  );
-  const newFeatures = Array.from({ length: NUM_ROWS }, () =>
-    Array.from({ length: NUM_COLS }, () => null)
+    Array.from({ length: NUM_COLS }, () => {
+      return {
+        terrain: "Ocean",
+        feature: null,
+        troop: null,
+      };
+    })
   );
   
   generateLand(newBoard);
-  generateVillages(newBoard, newFeatures);
+  generateVillages(newBoard);
   generateWater(newBoard);
 
-  return { newBoard, newFeatures };
+  return newBoard;
 }

@@ -3,7 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
-import { TRPCReactProvider } from "~/trpc/react";
+import { GameContextProvider } from "~/app/contexts/useGame";
 
 export const metadata: Metadata = {
   title: "Polytopia",
@@ -22,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <GameContextProvider>
+          {children}
+        </GameContextProvider>
       </body>
     </html>
   );

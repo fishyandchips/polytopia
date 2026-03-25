@@ -10,7 +10,7 @@ import { TERRAIN_COLOURS } from './constants/terrain';
 import { Warrior } from './utils/troops';
 import { WarriorMesh } from './assets/troops';
 import { CARDINAL_DIRECTIONS, DIAGONAL_DIRECTIONS } from './constants/directions';
-import { Tile, PossibleMoveIndicator } from './assets/ui'; 
+import { Tile, PossibleMoveIndicator, Fog } from './assets/ui'; 
 import { Village } from './assets/buildings'; 
 import { initBoard } from "./utils/init";
 
@@ -24,6 +24,21 @@ export default function Home() {
     const newTroop = new Warrior(player, [row, col]);
 
     setTroops(prev => [ ...prev, newTroop ]);
+
+    const newBoard = [...board];
+    newBoard[row][col].discovered = true;
+    for (const [dr, dc] of [...CARDINAL_DIRECTIONS, ...DIAGONAL_DIRECTIONS]) {
+      const discoveredRow = row + dr;
+      const discoveredCol = col + dc;
+
+      if (discoveredRow < 0 || discoveredRow >= NUM_ROWS || discoveredCol < 0 || discoveredCol >= NUM_COLS) {
+        continue;
+      }
+
+      newBoard[discoveredRow][discoveredCol].discovered = true;
+    }
+
+    setBoard(newBoard);
   };
 
   const getTile = (terrain, row, col) => {
@@ -67,7 +82,7 @@ export default function Home() {
 
   return (
     <div className="w-[100vw] h-[100vh]">
-      <Canvas>
+      <Canvas flat>
         <PerspectiveCamera
           makeDefault
           position={[27, 15, 27]}
@@ -76,7 +91,11 @@ export default function Home() {
         <MapControls target={[0, -15, 0]} enableRotate={false} />
 
         {board.map((boardRow, row) => 
-          boardRow.map(({ terrain, feature, troop }, col) => {
+          boardRow.map(({ terrain, feature, discovered, territory }, col) => {
+            if (!discovered) {
+              return <Fog key={`${row}, ${col}`} position={[row, col]} />;
+            }
+            
             return (
               <Fragment key={`${row}, ${col}`}>
                 {getTile(terrain, row, col)}

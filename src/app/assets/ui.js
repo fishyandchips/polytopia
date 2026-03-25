@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useHover } from "~/app/hooks/useHover";
 import { Edges } from '@react-three/drei';
-import { TILE_SIZE } from "~/app/constants/meta";
+import { TILE_SIZE, NUM_ROWS, NUM_COLS } from "~/app/constants/meta";
 import { TERRAIN_COLOURS } from "~/app/constants/terrain";
 import { useGame } from "~/app/contexts/useGame";
+import { CARDINAL_DIRECTIONS, DIAGONAL_DIRECTIONS } from "~/app/constants/directions";
 
 export const PossibleMoveIndicator = ({ type, position }) => {
-  const { troops, setTroops, setPossibleMoves, selected, setSelected } = useGame();
+  const { board, setBoard, troops, setTroops, setPossibleMoves, selected, setSelected } = useGame();
   const { hovered, hoverProps } = useHover();
   const [row, col] = position;
 
@@ -16,6 +17,21 @@ export const PossibleMoveIndicator = ({ type, position }) => {
 
     setPossibleMoves([]);
     setSelected(null);
+
+    const newBoard = [...board];
+    newBoard[row][col].discovered = true;
+    for (const [dr, dc] of [...CARDINAL_DIRECTIONS, ...DIAGONAL_DIRECTIONS]) {
+      const discoveredRow = row + dr;
+      const discoveredCol = col + dc;
+
+      if (discoveredRow < 0 || discoveredRow >= NUM_ROWS || discoveredCol < 0 || discoveredCol >= NUM_COLS) {
+        continue;
+      }
+
+      newBoard[discoveredRow][discoveredCol].discovered = true;
+    }
+
+    setBoard(newBoard);
   }
 
   const attackTroop = () => {
@@ -106,6 +122,69 @@ export const Tile = ({ terrain, position }) => {
         linewidth={5}
         color="white"
       />}
+    </mesh>
+  );
+}
+
+export const Fog = ({ position }) => { 
+  const { hovered, hoverProps } = useHover();
+  const [row, col] = position;
+
+  return (
+    <mesh
+      {...hoverProps}
+    >
+      <mesh
+        position={[TILE_SIZE * row - TILE_SIZE / 4, 0, TILE_SIZE * col - TILE_SIZE / 4]}
+      >
+        <boxGeometry args={[TILE_SIZE / 2, TILE_SIZE, TILE_SIZE / 2]} />
+        <meshStandardMaterial
+          color={"#E6FDFF"}
+        />
+        {hovered && <Edges
+          linewidth={5}
+          color="white"
+        />}
+      </mesh>
+
+      <mesh
+        position={[TILE_SIZE * row - TILE_SIZE / 4, 0, TILE_SIZE * col + TILE_SIZE / 4]}
+      >
+        <boxGeometry args={[TILE_SIZE / 2, TILE_SIZE, TILE_SIZE / 2]} />
+        <meshStandardMaterial 
+          color={"#FFFFFF"}
+        />
+        {hovered && <Edges
+          linewidth={5}
+          color="white"
+        />}
+      </mesh>
+
+      <mesh
+        position={[TILE_SIZE * row + TILE_SIZE / 4, 0, TILE_SIZE * col - TILE_SIZE / 4]}
+      >
+        <boxGeometry args={[TILE_SIZE / 2, TILE_SIZE, TILE_SIZE / 2]} />
+        <meshStandardMaterial 
+          color={"#EBEBEB"}
+        />
+        {hovered && <Edges
+          linewidth={5}
+          color="white"
+        />}
+      </mesh>
+
+      <mesh
+        position={[TILE_SIZE * row + TILE_SIZE / 4, 0, TILE_SIZE * col + TILE_SIZE / 4]}
+      >
+        <boxGeometry args={[TILE_SIZE / 2, TILE_SIZE, TILE_SIZE / 2]} />
+        <meshStandardMaterial 
+          color={"#ECFCFF"}
+        />
+        {hovered && <Edges
+          linewidth={5}
+          color="white"
+        />}
+      </mesh>
     </mesh>
   );
 }

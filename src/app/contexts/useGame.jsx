@@ -15,6 +15,8 @@ export const GameContextProvider = ({ children }) => {
         return {
           terrain: null,
           feature: null,
+          discovered: false,
+          territory: null
         };
       })
     )

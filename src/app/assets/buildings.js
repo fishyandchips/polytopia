@@ -8,22 +8,59 @@ export const Village = ({ position }) => {
   return (
     <>
       <mesh
-        position={[TILE_SIZE * row, TILE_SIZE * (3 / 4), TILE_SIZE * col]}
+        position={[TILE_SIZE * row + TILE_SIZE / 5, TILE_SIZE / 2 + TILE_SIZE / 8, TILE_SIZE * col + TILE_SIZE / 5]}
       >
-        <boxGeometry args={[TILE_SIZE / 2, TILE_SIZE / 2, TILE_SIZE / 2]} />
+        <boxGeometry args={[TILE_SIZE / 4, TILE_SIZE / 4, TILE_SIZE / 4]} />
         <meshStandardMaterial 
           color={"#C79973"}
         />
       </mesh>
       <mesh
-        position={[TILE_SIZE * row, TILE_SIZE * (3 / 4) + TILE_SIZE / 2, TILE_SIZE * col]}
+        position={[TILE_SIZE * row + TILE_SIZE / 5, TILE_SIZE / 2 + TILE_SIZE / 3, TILE_SIZE * col + TILE_SIZE / 5]}
         rotation={[0, 40, 0]}
       >
-        <coneGeometry args={[TILE_SIZE / 2 + TILE_SIZE / 10, TILE_SIZE / 2, 4]} />
+        <coneGeometry args={[TILE_SIZE / 4 + TILE_SIZE / 20, TILE_SIZE / 4, 4]} />
         <meshStandardMaterial 
           color={"#C79973"}
         />
       </mesh>
+
+      <mesh
+        position={[TILE_SIZE * row - TILE_SIZE / 5, TILE_SIZE / 2 + TILE_SIZE / 8, TILE_SIZE * col]}
+      >
+        <boxGeometry args={[TILE_SIZE / 4, TILE_SIZE / 4, TILE_SIZE / 4]} />
+        <meshStandardMaterial 
+          color={"#C79973"}
+        />
+      </mesh>
+      <mesh
+        position={[TILE_SIZE * row - TILE_SIZE / 5, TILE_SIZE / 2 + TILE_SIZE / 3, TILE_SIZE * col]}
+        rotation={[0, 40, 0]}
+      >
+        <coneGeometry args={[TILE_SIZE / 4 + TILE_SIZE / 20, TILE_SIZE / 4, 4]} />
+        <meshStandardMaterial 
+          color={"#C79973"}
+        />
+      </mesh>
+
+      <mesh
+        position={[TILE_SIZE * row + TILE_SIZE / 5, TILE_SIZE / 2 + TILE_SIZE / 8, TILE_SIZE * col - TILE_SIZE / 5]}
+      >
+        <boxGeometry args={[TILE_SIZE / 4, TILE_SIZE / 4, TILE_SIZE / 4]} />
+        <meshStandardMaterial 
+          color={"#C79973"}
+        />
+      </mesh>
+      <mesh
+        position={[TILE_SIZE * row + TILE_SIZE / 5, TILE_SIZE / 2 + TILE_SIZE / 3, TILE_SIZE * col - TILE_SIZE / 5]}
+        rotation={[0, 40, 0]}
+      >
+        <coneGeometry args={[TILE_SIZE / 4 + TILE_SIZE / 20, TILE_SIZE / 4, 4]} />
+        <meshStandardMaterial 
+          color={"#C79973"}
+        />
+      </mesh>
+      
       <Line
         points={[
           [TILE_SIZE * row - (TILE_SIZE + TILE_SIZE / 2), TILE_SIZE / 2, TILE_SIZE * col - (TILE_SIZE + TILE_SIZE / 2)],
